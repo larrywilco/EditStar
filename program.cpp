@@ -9,6 +9,7 @@ CProgram::CProgram() {
 	fontSize = 12;
 	winWidth = 640;
 	winHeight = 480;
+	font = NULL;
 	init();
 }
 
@@ -68,6 +69,11 @@ void CProgram::run() {
 	bool cont = true;
 	SDL_Event event;
 	
+	font = TTF_OpenFont(fontPath, fontSize);
+	if (!font) {
+		printf("Open font error\n");
+		return;
+	}
 	SDL_StartTextInput();
 	while (cont) {
 		SDL_WaitEvent(&event);
@@ -87,4 +93,5 @@ void CProgram::run() {
 		}
 	}
 	SDL_StopTextInput();
+	if (font) TTF_CloseFont(font);
 }
