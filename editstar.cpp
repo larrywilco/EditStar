@@ -9,26 +9,49 @@ void CEditStar::onKeyDown(SDL_Event& event) {
 
 void CEditStar::onTextInput(SDL_Event& event) {
 	int w, h;
-	char *s;
+	std::vector<SDL_Surface *>frame;
+	SDL_Color color = {255, 255, 255 };
+	SDL_Texture *texture = NULL;
 	
-	beginRender();
-	raw.cat(event.text.text);
-	char s = raw.get();
-	TTF_SizeUTF8(font, s, &w, &h);
+	story.append(event.text.text);
+	TTF_SizeUTF8(font, event.text.text, &w, &h);
 	printf("Text length: %d\n", w);
-	endRender();
-//	render(renderer);
-//	printf("Input %s\n", event.text.text);
-}
-
-void CEditStar::beginRender() {
-	font = TTF_OpenFont(fontPath, fontSize);
-	if (!font) {
-		printf("Open font error\n");
-		return;
+	SDL_GetRendererOutputSize(renderer, &w, &h);
+	SDL_Surface *i = story.toSurface(0, font, color);
+	frame.push_back(i);
+	SDL_Surface *area = SDL_CreateRGBSurfaceWithFormat(0, 
+			w, h, 32, SDL_PIXELFORMAT_RGBA32);
+	SDL_Rect rect = {0, 0, 0, 0};
+	std::vector<SDL_Surface *>::iterator it;
+	for(it=frame.begin(); it != frame.end(); it++) {
+		SDL_BlitSurface(*it, NULL, area, &rect);
+		printf("%d\n", rect.y);
+		rect.y += (*it)->h;
 	}
-}
 
-void CEditStar::endRender() {
-	TTF_CloseFont(font);
+	while(!frame.empty()) {
+		SDL_Surface *p = frame.back();
+		SDL_FreeSurface(p);
+		frame.pop_back();
+	}
+	rect = {0, 0, 0, 0};
+	texture = SDL_CreateTextureFromSurface(renderer, area);
+	SDL_QueryTexture(texture, NULL, NULL, &rect.w, &rect.h);
+	SDL_Rect srcRect = rect;
+//	rect.w /= 6;
+//	rect.h /= 6;
+	rect.x = 1;
+	rect.y = 1;
+	// Horizontal scrolling
+	if (rect.w >= w) {
+		srcRect.x = srcRect.w - w;
+		rect.w = w;
+	}
+
+	SDL_FreeSurface(area);
+	SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0x0);
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, texture, &srcRect, &rect);
+	SDL_RenderPresent(renderer);
+	SDL_DestroyTexture(texture);
 }

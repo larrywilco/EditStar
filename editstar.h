@@ -6,11 +6,9 @@
 
 class CEditStar : public CProgram {
 	private:
-		void beginRender();
-		void endRender();
-		TTF_Font *font;
-		CBuffer raw;
-		
+		CStory story;
+		int cx, cy;
+
 	protected:
 		virtual void onKeyDown(SDL_Event& event);
 		virtual void onTextInput(SDL_Event& event);
