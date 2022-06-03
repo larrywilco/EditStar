@@ -6,7 +6,7 @@
 CProgram::CProgram() {
 	fontPath = NULL;
 	fontFamily = strdup("Mono");
-	fontSize = 12;
+	fontSize = 24;
 	winWidth = 640;
 	winHeight = 480;
 	font = NULL;
@@ -37,6 +37,10 @@ void CProgram::init() {
 	window = SDL_CreateWindow("Untitled", SDL_WINDOWPOS_UNDEFINED,
 				SDL_WINDOWPOS_UNDEFINED, winWidth, winHeight, 0);
 	renderer = SDL_CreateRenderer(window, -1, render_flags);
+	view.x = 1;
+	view.y = 1;
+	view.w = winWidth - 2;
+	view.h = winHeight - 2;
 }
 
 void CProgram::findFont() {

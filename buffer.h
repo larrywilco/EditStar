@@ -15,24 +15,40 @@ class CParagraph {
 		CParagraph();
 		~CParagraph();
 		
-		void cat(char *s);
+		void cat(char *s, int n);
 		char *get() { return buf; }
 		int getLength() { return len; }
-		SDL_Surface *toSurface(TTF_Font *ft, SDL_Color& color);
+};
+
+class CStory;
+
+class CFrameBuffer {
+	private:
+		std::vector<char *>buf;
+		std::vector<SDL_Surface *>lines;
+		TTF_Font *font;
+		SDL_Rect rect;
+	public:
+		CFrameBuffer();
+		~CFrameBuffer();
+		void prepare(TTF_Font *font, SDL_Rect& r, CStory& story);
+		SDL_Surface * render(SDL_Color& color);
+		void freeBuffer();
+		std::vector<SDL_Surface *>& getLines() { return lines; }
 };
 
 class CStory {
-	private:
+	friend class CFrameBuffer;
+	protected:
 		std::vector<CParagraph *>text;
-		int cx, cy;
-		int sx, sy;
+		int top, right, bottom, left;
 		
 	public:
 		CStory();
 		~CStory();
 		
-		void append(char *s);
-		SDL_Surface *toSurface(int idx, TTF_Font *ft, SDL_Color& color);
+		void append(char *s, int n);
+		void newline();
 };
 
 #endif

@@ -17,6 +17,7 @@ class CProgram {
 		int winHeight;
 		SDL_Window *window;
 		SDL_Renderer *renderer;
+		SDL_Rect view;
 		TTF_Font *font;
 		
 		virtual void onKeyDown(SDL_Event& event) = 0;
