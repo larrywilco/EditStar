@@ -7,7 +7,7 @@
 
 class CParagraph {
 	private:
-		char *buf;
+		char *buf; // UTF32 string
 		size_t len;
 		size_t alloc;
 		
@@ -29,6 +29,9 @@ class CFrameBuffer {
 		TTF_Font *font;
 		SDL_Rect rect;
 	public:
+		int column, row;
+		SDL_Rect cursor;
+		
 		CFrameBuffer();
 		~CFrameBuffer();
 		void prepare(TTF_Font *font, SDL_Rect& r, CStory& story);
@@ -39,6 +42,9 @@ class CFrameBuffer {
 
 class CStory {
 	friend class CFrameBuffer;
+	private:
+		char * toUnicode(char *s, int& n);
+		
 	protected:
 		std::vector<CParagraph *>text;
 		int top, right, bottom, left;
@@ -47,7 +53,7 @@ class CStory {
 		CStory();
 		~CStory();
 		
-		void append(char *s, int n);
+		int append(char *s);
 		void newline();
 };
 
