@@ -139,7 +139,7 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 	for (int y = story.top; y<=story.bottom; y++) {
 		printf("column: %d y:%d\n", column, y);
 		size_t inbytes = story.text[y]->size();
-		if (inbytes<1) {
+		if (inbytes<1) { // Take care of blank line
 			char *tmp = (char *)calloc(sizeof(char), 2);
 			*tmp = ' ';
 			buf.push_back(tmp);

@@ -5,7 +5,8 @@
 
 CProgram::CProgram() {
 	fontPath = NULL;
-	fontFamily = strdup("Glass TTY VT220");
+//	fontFamily = strdup("Glass TTY VT220");
+	fontFamily = strdup("Mono");
 	fontSize = 32;
 	winWidth = 640;
 	winHeight = 480;
