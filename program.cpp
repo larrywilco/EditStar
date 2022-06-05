@@ -5,11 +5,14 @@
 
 CProgram::CProgram() {
 	fontPath = NULL;
-	fontFamily = strdup("Mono");
-	fontSize = 24;
+	fontFamily = strdup("Glass TTY VT220");
+	fontSize = 32;
 	winWidth = 640;
 	winHeight = 480;
 	font = NULL;
+//	bgcolor = {0x0, 0x0, 0x00, SDL_ALPHA_OPAQUE};
+	bgcolor = {40, 40, 40, SDL_ALPHA_OPAQUE};
+	fgcolor = {0xFF, 0xB0, 0x0, SDL_ALPHA_OPAQUE};
 	init();
 }
 
@@ -98,4 +101,33 @@ void CProgram::run() {
 	}
 	SDL_StopTextInput();
 	if (font) TTF_CloseFont(font);
+}
+
+void CProgram::show() {
+	SDL_RenderPresent(renderer);
+}
+
+void CProgram::setColor(bool foreground) {
+	if (foreground) {
+		SDL_SetRenderDrawColor(renderer, fgcolor.r, fgcolor.g, fgcolor.b, 
+				fgcolor.a);
+	} else {
+		SDL_SetRenderDrawColor(renderer, bgcolor.r, bgcolor.g, bgcolor.b, 
+				SDL_ALPHA_OPAQUE);
+	}
+}
+
+void CProgram::setColor(SDL_Color& color) {
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+}
+
+void CProgram::clear() {
+	SDL_SetRenderDrawColor(renderer, bgcolor.r, bgcolor.g, bgcolor.b, 
+				SDL_ALPHA_OPAQUE);
+	SDL_RenderClear(renderer);
+}
+
+void CProgram::clearAndRender(SDL_Texture *texture, SDL_Rect *src, SDL_Rect *dest) {
+	clear();
+	SDL_RenderCopy(renderer, texture, src, dest);
 }

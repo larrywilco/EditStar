@@ -6,15 +6,41 @@ CEditStar::CEditStar() {
 CEditStar::~CEditStar() {
 }
 
+void CEditStar::onKeyReturn() {
+	eraseCursor();
+	story.newline();
+	frameBuffer.newLine();
+	drawCursor();
+	show();
+}
+
+void CEditStar::onKeyLeft() {
+	eraseCursor();
+	frameBuffer.moveLeft(story);
+	drawCursor();
+	show();
+}
+
+void CEditStar::onKeyRight() {
+	eraseCursor();
+	frameBuffer.moveRight(story);
+	drawCursor();
+	show();
+}
+
 void CEditStar::onKeyDown(SDL_Event& event) {
 	switch (event.key.keysym.sym) {
 		case SDLK_F5:
 			break;
 		case SDLK_RETURN:
 		case SDLK_RETURN2:
-			story.newline();
-			frameBuffer.column = 0;
-			frameBuffer.row++;
+			onKeyReturn();
+			break;
+		case SDLK_LEFT:
+			onKeyLeft();
+			break;
+		case SDLK_RIGHT:
+			onKeyRight();
 			break;
 		default:
 			break;
@@ -22,11 +48,22 @@ void CEditStar::onKeyDown(SDL_Event& event) {
 	printf("scancode %d\n", event.key.keysym.scancode);
 }
 
+void CEditStar::eraseCursor() {
+	setColor(false);
+	SDL_RenderDrawLine(renderer, frameBuffer.cursor.x, frameBuffer.cursor.y,
+		frameBuffer.cursor.w, frameBuffer.cursor.h);	
+}
+
+void CEditStar::drawCursor() {
+	setColor();
+	SDL_RenderDrawLine(renderer, frameBuffer.cursor.x, frameBuffer.cursor.y,
+		frameBuffer.cursor.w, frameBuffer.cursor.h);	
+}
+
 void CEditStar::render() {
-	SDL_Color color = {255, 255, 255 };
 	SDL_Texture *texture = NULL;
 	frameBuffer.prepare(font, view, story);
-	SDL_Surface *area  = frameBuffer.render(color);
+	SDL_Surface *area  = frameBuffer.render(fgcolor);
 
 	SDL_Rect rect = {0, 0, 0, 0};
 	texture = SDL_CreateTextureFromSurface(renderer, area);
@@ -41,13 +78,9 @@ void CEditStar::render() {
 	}
 
 	SDL_FreeSurface(area);
-	SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0x0);
-	SDL_RenderClear(renderer);
-	SDL_RenderCopy(renderer, texture, &srcRect, &rect);
-	SDL_SetRenderDrawColor(renderer, 255, 255,255, SDL_ALPHA_OPAQUE);
-	SDL_RenderDrawLine(renderer, frameBuffer.cursor.x, frameBuffer.cursor.y,
-		frameBuffer.cursor.w, frameBuffer.cursor.h);
-	SDL_RenderPresent(renderer);
+	clearAndRender(texture, &srcRect, &rect);
+	drawCursor();
+	show();
 	SDL_DestroyTexture(texture);
 }
 

@@ -19,9 +19,16 @@ class CProgram {
 		SDL_Renderer *renderer;
 		SDL_Rect view;
 		TTF_Font *font;
-		
+		SDL_Color bgcolor;
+		SDL_Color fgcolor;
 		virtual void onKeyDown(SDL_Event& event) = 0;
 		virtual void onTextInput(SDL_Event& event) = 0;
+		void show();
+		void clear();
+		void clearAndRender(SDL_Texture *texture, SDL_Rect *src, SDL_Rect *dest);
+		void setColor(bool foreground = true);
+		void setColor(SDL_Color& color);
+		
 	public:
 		CProgram();
 		~CProgram();

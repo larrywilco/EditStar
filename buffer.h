@@ -17,7 +17,10 @@ class CParagraph {
 		
 		void cat(char *s, int n);
 		char *get() { return buf; }
-		int getLength() { return len; }
+		int size() { return len; }
+		int count();
+		char *toUtf8(int nchar = 0); // Number of character. Not bytes
+		int appendUtf8(char *s);
 };
 
 class CStory;
@@ -38,13 +41,13 @@ class CFrameBuffer {
 		SDL_Surface * render(SDL_Color& color);
 		void freeBuffer();
 		std::vector<SDL_Surface *>& getLines() { return lines; }
+		void newLine();
+		void moveLeft(CStory& story);
+		void moveRight(CStory& story);
 };
 
 class CStory {
 	friend class CFrameBuffer;
-	private:
-		char * toUnicode(char *s, int& n);
-		
 	protected:
 		std::vector<CParagraph *>text;
 		int top, right, bottom, left;
