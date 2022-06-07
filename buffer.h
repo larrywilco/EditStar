@@ -25,9 +25,18 @@ class CParagraph {
 
 class CStory;
 
+class CLine {
+	public:
+		int start, end, len;
+		char *buf;
+		CLine();
+		~CLine();
+		CLine(char *s);
+};
+
 class CFrameBuffer {
 	private:
-		std::vector<char *>buf;
+		std::vector<CLine *>buf;
 		std::vector<SDL_Surface *>lines;
 		TTF_Font *font;
 		SDL_Rect rect;

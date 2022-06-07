@@ -108,6 +108,20 @@ void CStory::newline() {
 	bottom++;
 }
 
+CLine::CLine() {
+	buf = NULL;
+	len = start = end = 0; 
+}
+CLine::CLine(char *s) { 
+	buf = s; 
+	start = end = 0; 
+	if (s) len = strlen(s);
+}
+
+CLine::~CLine() {
+	if (buf) free(buf);
+	buf = NULL;
+}
 CFrameBuffer::CFrameBuffer() {
 	buf.reserve(25);
 	column = row = 0;
@@ -120,29 +134,35 @@ CFrameBuffer::~CFrameBuffer() {
 
 void CFrameBuffer::freeBuffer() {
 	while(!buf.empty()) {
-		char *p = buf.back();
-		free(p);
+		CLine *p = buf.back();
+		delete p;
 		buf.pop_back();
 	}
-//	buf.clear();
+	buf.clear();
 }
 
 // Figure out the range of text fitted into the viewing rect
 void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
-	int txtw, txth, idx = row;
+	int txtw = 0, txth = 0, idx = row;
 	freeBuffer();
 	font = ft;
 	rect = r;
 	rect.y = 0;
-	if (idx > 0) idx--;
+//	if (idx > 0) idx--;
 	cursor.h = 0;
 	for (int y = story.top; y<=story.bottom; y++) {
-		printf("column: %d y:%d\n", column, y);
 		size_t inbytes = story.text[y]->size();
+		printf("column: %d y:%d row:%d bytes:%ld\n", column, y, row, inbytes);
 		if (inbytes<1) { // Take care of blank line
-			char *tmp = (char *)calloc(sizeof(char), 2);
+			char *tmp = (char *)malloc(sizeof(char)*2);
 			*tmp = ' ';
-			buf.push_back(tmp);
+			*(tmp+1) = '\0';
+			buf.push_back(new CLine(tmp));
+			TTF_SizeUTF8(font, tmp, &txtw, &txth);
+			if (y <= row) {
+				cursor.h += txth;
+				cursor.y = cursor.h - txth;
+			}
 			continue;
 		}
 		char *utf8 = story.text[y]->toUtf8();
@@ -161,13 +181,13 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 		}
 		int nsize = strlen(utf8);
 		char *tmp = (char *)calloc(sizeof(char), nsize+1);
-		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d\n", 
-			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h);
+		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d idx: %d y:%d\n", 
+			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, idx, y);
 		if (txtw < r.w) {
 			memcpy(tmp, utf8, nsize);
 		}
 		free(utf8);
-		buf.push_back(tmp);
+		buf.push_back(new CLine(tmp));
 	}
 }
 
@@ -181,7 +201,8 @@ SDL_Surface * CFrameBuffer::render(SDL_Color& color) {
 			rect.w, rect.h, 32, SDL_PIXELFORMAT_RGBA32);
 	SDL_Rect r = {0, 0, 0, 0};
 	for(int i=0; i<(int)buf.size(); i++) {
-		SDL_Surface *surface = TTF_RenderUTF8_Blended(font, buf[i], color);
+		char *s = buf[i]->buf;
+		SDL_Surface *surface = TTF_RenderUTF8_Blended(font, s, color);
 		SDL_BlitSurface(surface, NULL, area, &r);
 		r.y += surface->h;
 		SDL_FreeSurface(surface);
