@@ -14,6 +14,8 @@ class CEditStar : public CProgram {
 		void onKeyReturn();
 		void onKeyLeft();
 		void onKeyRight();
+		void onBackSpace();
+		void onDelete();
 		
 	protected:
 		virtual void onKeyDown(SDL_Event& event);

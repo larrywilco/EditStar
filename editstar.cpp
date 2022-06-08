@@ -28,6 +28,14 @@ void CEditStar::onKeyRight() {
 	show();
 }
 
+void CEditStar::onBackSpace() {
+	frameBuffer.column = story.backspace(frameBuffer.row, frameBuffer.column);
+	render();
+}
+
+void CEditStar::onDelete() {
+}
+
 void CEditStar::onKeyDown(SDL_Event& event) {
 	switch (event.key.keysym.sym) {
 		case SDLK_F5:
@@ -41,6 +49,12 @@ void CEditStar::onKeyDown(SDL_Event& event) {
 			break;
 		case SDLK_RIGHT:
 			onKeyRight();
+			break;
+		case SDLK_BACKSPACE:
+			onBackSpace();
+			break;
+		case SDLK_DELETE:
+			onDelete();
 			break;
 		default:
 			break;

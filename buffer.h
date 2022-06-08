@@ -21,6 +21,7 @@ class CParagraph {
 		int count();
 		char *toUtf8(int nchar = 0); // Number of character. Not bytes
 		int appendUtf8(char *s);
+		void backspace(int column);
 };
 
 class CStory;
@@ -67,6 +68,7 @@ class CStory {
 		
 		int append(char *s);
 		void newline();
+		int backspace(int row, int column);
 };
 
 #endif

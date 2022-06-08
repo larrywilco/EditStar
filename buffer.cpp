@@ -81,6 +81,19 @@ int CParagraph::appendUtf8(char *str) {
 	return nbytes/4;
 }
 
+void CParagraph::backspace(int column) {
+	int idx = column * 4;
+	if (len <= 4) {
+		memset(buf, 0, len);
+		len =0;
+		return;
+	}
+	if (idx < (int)len) {
+		memmove(buf + idx, buf + idx + 4, len - idx - 4);
+	}
+	len -= 4;
+}
+
 CStory::CStory() {
 	CParagraph *tmp = new CParagraph();
 	text.push_back(tmp);
@@ -106,6 +119,19 @@ void CStory::newline() {
 	CParagraph *tmp = new CParagraph();
 	text.push_back(tmp);
 	bottom++;
+}
+
+void CStory::backspace(int row, int column) {
+	if (row >= (int)text.size()) return;
+	if (text[row]->size() <= 0) {
+		column = 0;
+		CParagraph *p = text[row];
+		delete p;
+		text.erase(text.begin() + row);
+		return;
+	}
+	text[row]->backspace(column);
+	column--;
 }
 
 CLine::CLine() {
@@ -162,6 +188,7 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			if (y <= row) {
 				cursor.h += txth;
 				cursor.y = cursor.h - txth;
+				cursor.x = cursor.w = 2;
 			}
 			continue;
 		}
