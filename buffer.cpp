@@ -12,6 +12,7 @@ CParagraph::CParagraph() {
 }
 
 CParagraph::~CParagraph() {
+	printf("Destroy p\n");
 	if (buf) free(buf);
 	buf = NULL;
 }
@@ -81,7 +82,7 @@ int CParagraph::appendUtf8(char *str) {
 	return nbytes/4;
 }
 
-void CParagraph::backspace(int column) {
+void CParagraph::del(int column) {
 	int idx = column * 4;
 	if (len <= 4) {
 		memset(buf, 0, len);
@@ -121,17 +122,11 @@ void CStory::newline() {
 	bottom++;
 }
 
-void CStory::backspace(int row, int column) {
-	if (row >= (int)text.size()) return;
-	if (text[row]->size() <= 0) {
-		column = 0;
-		CParagraph *p = text[row];
-		delete p;
-		text.erase(text.begin() + row);
-		return;
-	}
-	text[row]->backspace(column);
-	column--;
+void CStory::delline(int idx) {
+	CParagraph *p = text[idx];
+	text.erase(text.begin() + idx);
+	delete p;
+	bottom--;
 }
 
 CLine::CLine() {
@@ -152,6 +147,7 @@ CFrameBuffer::CFrameBuffer() {
 	buf.reserve(25);
 	column = row = 0;
 	cursor = { 0,0,0, 0};
+	estChars =0;
 }
 
 CFrameBuffer::~CFrameBuffer() {
@@ -277,5 +273,32 @@ void CFrameBuffer::moveRight(CStory& story) {
 	cursor.x = txtw+1;
 	cursor.w = txtw+1;
 	free(s2);
+}
+
+void CFrameBuffer::backspace(CStory& story) {
+	if (row >= (int)story.text.size()) return;
+	if (story.text[row]->size() <= 0) {
+		story.delline(row);
+		if (row > 0) row--;
+		column = story.text[row]->count();
+		return;
+	}
+	story.text[row]->del(column);
+	column--;
+}
+
+void CFrameBuffer::estimateLineLength(TTF_Font *ft, SDL_Rect& r) {
+	char s[1024];
+	memset(s, 0, sizeof(s));
+	int idx = 0;
+	int poll = true;
+	int txtw, txth;
+	while (poll) {
+		s[idx] = 'A';
+		s[idx+1] = '\0';
+		TTF_SizeUTF8(font, s, &txtw, &txth);
+		if (txtw >= r.w) poll = false;
+	}
+	estChars = idx;
 }
 

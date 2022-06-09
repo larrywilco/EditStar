@@ -21,7 +21,7 @@ class CParagraph {
 		int count();
 		char *toUtf8(int nchar = 0); // Number of character. Not bytes
 		int appendUtf8(char *s);
-		void backspace(int column);
+		void del(int column);
 };
 
 class CStory;
@@ -41,6 +41,7 @@ class CFrameBuffer {
 		std::vector<SDL_Surface *>lines;
 		TTF_Font *font;
 		SDL_Rect rect;
+		int estChars;
 	public:
 		int column, row;
 		SDL_Rect cursor;
@@ -51,9 +52,11 @@ class CFrameBuffer {
 		SDL_Surface * render(SDL_Color& color);
 		void freeBuffer();
 		std::vector<SDL_Surface *>& getLines() { return lines; }
+		void estimateLineLength(TTF_Font *ft, SDL_Rect& r);
 		void newLine();
 		void moveLeft(CStory& story);
 		void moveRight(CStory& story);
+		void backspace(CStory& story);
 };
 
 class CStory {
@@ -68,7 +71,7 @@ class CStory {
 		
 		int append(char *s);
 		void newline();
-		int backspace(int row, int column);
+		void delline(int idx);
 };
 
 #endif

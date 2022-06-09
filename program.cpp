@@ -74,6 +74,15 @@ void CProgram::findFont() {
 	FcFini();
 }
 
+void CProgram::setFont(char *pattern) {
+	if (!pattern) return;
+	if (font) TTF_CloseFont(font);
+	if (fontFamily) free(fontFamily);
+	fontFamily = strdup(pattern);
+	findFont();
+	font = TTF_OpenFont(fontPath, fontSize);
+}
+
 void CProgram::run() {
 	bool cont = true;
 	SDL_Event event;

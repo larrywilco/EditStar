@@ -33,6 +33,7 @@ class CProgram {
 		CProgram();
 		~CProgram();
 		void run();
+		void setFont(char *pattern);
 };
 
 #endif

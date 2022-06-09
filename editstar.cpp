@@ -29,7 +29,7 @@ void CEditStar::onKeyRight() {
 }
 
 void CEditStar::onBackSpace() {
-	frameBuffer.column = story.backspace(frameBuffer.row, frameBuffer.column);
+	frameBuffer.backspace(story);
 	render();
 }
 
