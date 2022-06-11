@@ -22,6 +22,7 @@ class CParagraph {
 		char *toUtf8(int nchar = 0); // Number of character. Not bytes
 		int appendUtf8(char *s);
 		void del(int column);
+		char * subUtf8(int start, int end);
 };
 
 class CStory;

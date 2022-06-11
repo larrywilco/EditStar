@@ -35,6 +35,7 @@ int CParagraph::count() {
 }
 
 char *CParagraph::toUtf8(int nchar) {
+	if (len < 1) return NULL;
 	if ((nchar *4) > (int)len) return NULL;
 	size_t inbytes = len;
 	int mem = len*2;
@@ -93,6 +94,35 @@ void CParagraph::del(int column) {
 		memmove(buf + idx, buf + idx + 4, len - idx - 4);
 	}
 	len -= 4;
+}
+
+char * CParagraph::subUtf8(int start, int end) {
+	if (len < 1) return NULL;
+	if (end < start) return NULL;
+	size_t first, last;
+	
+	first = start * 4;
+	last = end * 4;
+	if (last > len) last = len;
+	int nbytes = last - first + 2;
+	char *substr = (char *)calloc(sizeof(char), nbytes);
+	char *converted = (char *)calloc(sizeof(char), nbytes + 10);
+	char *s = buf + first;
+	memcpy(substr, s, last - first);
+	iconv_t cd = iconv_open("UTF32LE", "UTF8");
+	s = substr;
+	char *d = converted;
+	size_t inbytes = strlen(s);
+	size_t outbytes = nbytes + 10;
+	size_t rc = iconv(cd, &s, &inbytes, &d, &outbytes);
+	if (rc == (size_t)-1) {
+		free(substr);
+		free(converted);
+		iconv_close(cd);
+		return NULL;
+	}
+	free(substr);
+	return converted;
 }
 
 CStory::CStory() {
@@ -157,8 +187,8 @@ CFrameBuffer::~CFrameBuffer() {
 void CFrameBuffer::freeBuffer() {
 	while(!buf.empty()) {
 		CLine *p = buf.back();
-		delete p;
 		buf.pop_back();
+		delete p;
 	}
 	buf.clear();
 }
@@ -170,25 +200,34 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 	font = ft;
 	rect = r;
 	rect.y = 0;
-//	if (idx > 0) idx--;
 	cursor.h = 0;
-	for (int y = story.top; y<=story.bottom; y++) {
-		size_t inbytes = story.text[y]->size();
+	int length = story.text.size();
+	int height = 0;
+	bool good = true;
+	int lastpos = 0;
+	for (int y = story.top; (y<length) && good; y++) {
+		bool toFit = true;
+		CParagraph *p = story.text[y];
+		size_t inbytes = p->size();
+		int nchars = p->count();
+		for(int i = 1; i<nchars; i++) {
+			char *s = p->toUtf8(i);
+		}
+		char *utf8 = story.text[y]->toUtf8();
 		printf("column: %d y:%d row:%d bytes:%ld\n", column, y, row, inbytes);
-		if (inbytes<1) { // Take care of blank line
+		if (!utf8) { // Take care of blank line
 			char *tmp = (char *)malloc(sizeof(char)*2);
 			*tmp = ' ';
 			*(tmp+1) = '\0';
-			buf.push_back(new CLine(tmp));
-			TTF_SizeUTF8(font, tmp, &txtw, &txth);
-			if (y <= row) {
-				cursor.h += txth;
-				cursor.y = cursor.h - txth;
-				cursor.x = cursor.w = 2;
-			}
+			utf8 = tmp;
+		}
+
+		TTF_SizeUTF8(font, utf8, &txtw, &txth);
+		height += txth;
+		if (height >= r.h) {
+			good = false;
 			continue;
 		}
-		char *utf8 = story.text[y]->toUtf8();
 		if (idx == y) {
 			char *s2 = story.text[y]->toUtf8(column);
 			TTF_SizeUTF8(font, s2, &txtw, &txth);
@@ -196,20 +235,18 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			cursor.w = txtw+2;
 			free(s2);
 		}
-
-		TTF_SizeUTF8(font, utf8, &txtw, &txth);
 		if (y <= row) {
 			cursor.h += txth;
 			cursor.y = cursor.h - txth;
 		}
 		int nsize = strlen(utf8);
 		char *tmp = (char *)calloc(sizeof(char), nsize+1);
-		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d idx: %d y:%d\n", 
-			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, idx, y);
+		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d idx: %d y:%d nsize:%d\n", 
+			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, idx, y, nsize);
 		if (txtw < r.w) {
 			memcpy(tmp, utf8, nsize);
 		}
-		free(utf8);
+		if (utf8) free(utf8);
 		buf.push_back(new CLine(tmp));
 	}
 }
