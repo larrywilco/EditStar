@@ -51,6 +51,7 @@ char * StringU8::substr(int start, int nchar, char *dest, int maxBytes) {
 		s += bytes;
 		i += bytes;
 	}
+	*d = '\0';
 	return dest;
 }
 

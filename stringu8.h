@@ -8,11 +8,9 @@
  * No memory allocation and management functionalities.
  */
 class StringU8 {
-	private:
-		int byteCount(char s);
-		
 	protected:
 		char *buf;
+		int byteCount(char s);
 			
 	public:
 		class iterator {

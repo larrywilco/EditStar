@@ -38,22 +38,23 @@ int CParagraph::append(char *str) {
 }
 
 void CParagraph::del(int column) {
-	int idx = column * 4;
-	if (len <= 4) {
-		memset(buf, 0, len);
-		len =0;
-		return;
+	if (!buf) return;
+	if (column < 1) return;
+	int limit = ::strlen(buf);
+	char *src = buf, *dest = buf;
+	int cnt=1;
+	src = buf; dest = buf;
+	for (int i=0; i < limit; cnt++) {
+		int bytes = byteCount(*dest);
+		i += bytes;
+		if (cnt < column) {
+			dest += bytes;
+		} else if (cnt == column) {
+			src = dest + bytes;
+			memmove(dest, src, bytes);
+		}
 	}
-	if (idx < (int)len) {
-		memmove(buf + idx, buf + idx + 4, len - idx - 4);
-	}
-	len -= 4;
-}
-
-char * CParagraph::left(int c) {
-	char *s2 = (char *)calloc(sizeof(char), len+1);
-	substr(0, c, s2, len);
-	return s2;
+	len = strlen(buf);
 }
 
 CStory::CStory() {
@@ -222,25 +223,30 @@ void CFrameBuffer::newLine() {
 	cursor.h +=h;
 }
 
-void CFrameBuffer::moveLeft(CStory& story) {
-	printf("Column %d\n", column);
-	if (column < 1) return;
+void CFrameBuffer::horizontalMove() {
 	int txtw, txth;
-	column--;
-	if (column == 0) {
-		cursor.x = 1;
-		cursor.w = 1;
-		return;
-	}
-	char *s2 = story.text[row]->left(column);
+	StringU8 s(buf[row]->buf);
+	char *s2 = strdup((char *)s);
+	s.substr(0, column, s2, strlen(s));
 	TTF_SizeUTF8(font, s2, &txtw, &txth);
 	cursor.x = txtw+1;
 	cursor.w = txtw+1;
 	free(s2);
 }
 
+void CFrameBuffer::moveLeft(CStory& story) {
+	printf("Column %d\n", column);
+	if (column < 1) return;
+	column--;
+	if (column == 0) {
+		cursor.x = 1;
+		cursor.w = 1;
+		return;
+	}
+	horizontalMove();
+}
+
 void CFrameBuffer::moveRight(CStory& story) {
-	int txtw, txth;
 	int cnt = story.text[row]->strLen();
 	printf("Count: %d\n", cnt);
 	if (column >= cnt) {
@@ -248,11 +254,7 @@ void CFrameBuffer::moveRight(CStory& story) {
 	} else {
 		column++;
 	}
-	char *s2 = story.text[row]->left(column);
-	TTF_SizeUTF8(font, s2, &txtw, &txth);
-	cursor.x = txtw+1;
-	cursor.w = txtw+1;
-	free(s2);
+	horizontalMove();
 }
 
 void CFrameBuffer::backspace(CStory& story) {

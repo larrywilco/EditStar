@@ -20,7 +20,6 @@ class CParagraph : public StringU8 {
 		int size() { return len; }
 		int append(char *s);
 		void del(int column);
-		char *left(int c);
 };
 
 class CStory;
@@ -40,6 +39,8 @@ class CFrameBuffer {
 		std::vector<SDL_Surface *>lines;
 		TTF_Font *font;
 		SDL_Rect rect;
+		void horizontalMove();
+		
 	public:
 		int column, row;
 		SDL_Rect cursor;

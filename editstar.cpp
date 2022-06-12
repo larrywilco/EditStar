@@ -30,6 +30,7 @@ void CEditStar::onKeyRight() {
 
 void CEditStar::onBackSpace() {
 	frameBuffer.backspace(story);
+	printf("x: %d w: %d\n", frameBuffer.cursor.x, frameBuffer.cursor.w);
 	render();
 }
 
