@@ -100,7 +100,6 @@ void CEditStar::render() {
 }
 
 void CEditStar::onTextInput(SDL_Event& event) {
-	int chars = story.append(event.text.text);
-	frameBuffer.column += chars;
+	frameBuffer.insert(story, event.text.text);
 	render();
 }

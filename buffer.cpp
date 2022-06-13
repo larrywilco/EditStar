@@ -4,6 +4,7 @@
 #include "buffer.h"
 
 #define DEFAULT_BLOCK_SIZE 1024
+#define SPACING 1
 
 CParagraph::CParagraph() {
 	buf = (char *)calloc(sizeof(char), DEFAULT_BLOCK_SIZE);
@@ -12,7 +13,6 @@ CParagraph::CParagraph() {
 }
 
 CParagraph::~CParagraph() {
-	printf("Destroy p\n");
 	if (buf) free(buf);
 	buf = NULL;
 }
@@ -81,23 +81,23 @@ int CStory::append(char *s) {
 void CStory::newline() {
 	CParagraph *tmp = new CParagraph();
 	text.push_back(tmp);
-	bottom++;
+//	bottom++;
 }
 
 void CStory::delline(int idx) {
 	CParagraph *p = text[idx];
 	text.erase(text.begin() + idx);
 	delete p;
-	bottom--;
+//	bottom--;
 }
 
 CLine::CLine() {
 	buf = NULL;
-	len = start = end = 0; 
+	len = segbegin = seglen = 0; 
 }
 CLine::CLine(char *s) { 
 	buf = s; 
-	start = end = 0; 
+	lineno = segbegin = seglen = 0; 
 	if (s) len = strlen(s);
 }
 
@@ -136,14 +136,18 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 	int height = 0;
 	bool good = true;
 	for (int y = story.top; (y<length) && good; y++) {
+	bool emptyLine = false;
+		int startpos = 0;
+		int seglen = 0;
 		CParagraph *p = story.text[y];
 		char *utf8 = p->get();
 		int byteRemain = p->size();
 		char *dup = NULL;
-		printf("column: %d y:%d row:%d \n", column, y, row);
 		if ((!utf8) || (*utf8 == '\0')) { // Take care of blank line
+			emptyLine = true;
 			dup = strdup(" ");
 		} else {
+			emptyLine = false;
 			dup = (char *)calloc(sizeof(char), byteRemain+2);
 		}
 		CParagraph::iterator it = p->begin();
@@ -151,21 +155,30 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 		char *s;
 		while ((s = it.next()) && cont) {
 			int preserve = strlen(dup);
-			byteRemain -= strlen(s);
+			int byteUsed = strlen(s);
+			byteRemain -= byteUsed;
+			seglen += byteUsed;
 			strcat(dup, s);
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
+			printf("Row:%d y:%d\n", row, y);
 			if (txtw >= r.w) {
 				*(dup + preserve) = '\0';
 				height += txth;
 				if (row == y) {
-					cursor.x = txtw+2;
-					cursor.w = txtw+2;
+					cursor.x = txtw+SPACING;
+					cursor.w = txtw+SPACING;
 				}
 				if (y <= row) {
 					cursor.h += txth;
 					cursor.y = cursor.h - txth;
 				}
-				buf.push_back(new CLine(dup));
+				CLine *ln = new CLine(dup);
+				ln->lineno = y;
+				ln->segbegin = startpos;
+				ln->seglen = seglen;
+				buf.push_back(ln);
+				startpos += seglen;
+				seglen = 0;
 				y++;
 				if (height >= r.h) cont = false;
 				if (byteRemain > 0)
@@ -177,10 +190,21 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
 			height += txth;
 			if (row == y) {
-				cursor.x = txtw+2;
-				cursor.w = txtw+2;
+				if (emptyLine) {
+					cursor.x = SPACING;
+					cursor.w = SPACING;
+				} else {
+					cursor.x = txtw+SPACING;
+					cursor.w = txtw+SPACING;
+				}
 			}
-			buf.push_back(new CLine(dup));
+			CLine *ln = new CLine(dup);
+			ln->lineno = y;
+			ln->segbegin = startpos;
+			ln->seglen = seglen;
+			buf.push_back(ln);
+			startpos += seglen;
+			seglen = 0;
 			if (y <= row) {
 				cursor.h += txth;
 				cursor.y = cursor.h - txth;
@@ -215,7 +239,7 @@ SDL_Surface * CFrameBuffer::render(SDL_Color& color) {
 }
 
 void CFrameBuffer::newLine() {
-	cursor.x = cursor.w = 2;
+	cursor.x = cursor.w = SPACING;
 	column = 0;
 	row++;
 	int h = cursor.h - cursor.y;
@@ -224,23 +248,23 @@ void CFrameBuffer::newLine() {
 }
 
 void CFrameBuffer::horizontalMove() {
+	if (column < 1) return;
 	int txtw, txth;
 	StringU8 s(buf[row]->buf);
 	char *s2 = strdup((char *)s);
 	s.substr(0, column, s2, strlen(s));
 	TTF_SizeUTF8(font, s2, &txtw, &txth);
-	cursor.x = txtw+1;
-	cursor.w = txtw+1;
+	cursor.x = txtw+SPACING;
+	cursor.w = txtw+SPACING;
 	free(s2);
 }
 
 void CFrameBuffer::moveLeft(CStory& story) {
-	printf("Column %d\n", column);
 	if (column < 1) return;
 	column--;
 	if (column == 0) {
-		cursor.x = 1;
-		cursor.w = 1;
+		cursor.x = SPACING;
+		cursor.w = SPACING;
 		return;
 	}
 	horizontalMove();
@@ -248,7 +272,6 @@ void CFrameBuffer::moveLeft(CStory& story) {
 
 void CFrameBuffer::moveRight(CStory& story) {
 	int cnt = story.text[row]->strLen();
-	printf("Count: %d\n", cnt);
 	if (column >= cnt) {
 		column = cnt;
 	} else {
@@ -258,14 +281,19 @@ void CFrameBuffer::moveRight(CStory& story) {
 }
 
 void CFrameBuffer::backspace(CStory& story) {
-	if (row >= (int)story.text.size()) return;
-	if (story.text[row]->size() <= 0) {
-		story.delline(row);
+	if (row >= (int)buf.size()) return;
+	int lineno = buf[row]->lineno;
+	if (story.text[lineno]->size() <= 0) {
+		story.delline(lineno);
 		if (row > 0) row--;
-		column = story.text[row]->strLen();
+		column = story.text[lineno]->strLen();
 		return;
 	}
-	story.text[row]->del(column);
-	column--;
+	story.text[lineno]->del(column);
+	if (column > 0) column--;
 }
 
+void CFrameBuffer::insert(CStory& story, char *text) {
+	int chars = story.append(text);
+	column += chars;
+}

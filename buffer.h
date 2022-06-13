@@ -26,7 +26,7 @@ class CStory;
 
 class CLine {
 	public:
-		int start, end, len;
+		int lineno, segbegin, seglen, len;
 		char *buf;
 		CLine();
 		~CLine();
@@ -51,10 +51,12 @@ class CFrameBuffer {
 		SDL_Surface * render(SDL_Color& color);
 		void freeBuffer();
 		std::vector<SDL_Surface *>& getLines() { return lines; }
+		int size() { return buf.size(); }
 		void newLine();
 		void moveLeft(CStory& story);
 		void moveRight(CStory& story);
 		void backspace(CStory& story);
+		void insert(CStory& story, char *txt);
 };
 
 class CStory {
