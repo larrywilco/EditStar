@@ -40,19 +40,16 @@ int CParagraph::append(char *str) {
 void CParagraph::del(int column) {
 	if (!buf) return;
 	if (column < 1) return;
-	int limit = ::strlen(buf);
-	char *src = buf, *dest = buf;
-	int cnt=1;
-	src = buf; dest = buf;
-	for (int i=0; i < limit; cnt++) {
-		int bytes = byteCount(*dest);
-		i += bytes;
-		if (cnt < column) {
-			dest += bytes;
-		} else if (cnt == column) {
-			src = dest + bytes;
+	column--;
+	iterator it = begin();
+	while (char *s = it.next()) {
+		if (column < 1) {
+			int bytes = strlen(s);
+			char *src = it.peek();
+			char *dest = src - bytes;
 			memmove(dest, src, bytes);
 		}
+		if (column > 0) column--;
 	}
 	len = strlen(buf);
 }

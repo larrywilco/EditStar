@@ -8,9 +8,11 @@
  * No memory allocation and management functionalities.
  */
 class StringU8 {
+	private:
+		int byteCount(char s);
+	
 	protected:
 		char *buf;
-		int byteCount(char s);
 			
 	public:
 		class iterator {
@@ -22,6 +24,7 @@ class StringU8 {
 				iterator(StringU8 *obj);
 				void begin(int pos = 0);
 				char *next();
+				char *peek() { return ptr; };
 		};
 		StringU8() { buf = NULL; };
 		StringU8(const char *s) { buf = (char *)s; };
