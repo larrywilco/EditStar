@@ -19,7 +19,8 @@ class CParagraph : public StringU8 {
 		char *get() { return buf; }
 		int size() { return len; }
 		int append(char *s);
-		void del(int column);
+		void del(int bytesToSkip, int column);
+		void ins(char *s, int pos);
 };
 
 class CStory;

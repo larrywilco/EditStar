@@ -92,3 +92,9 @@ StringU8::iterator StringU8::begin(int pos) {
 	it.begin(pos);
 	return it;
 }
+
+void StringU8::iterator::seek(int bytes) {
+	if (!ptr) return;
+	if (bytes >= (int)strlen(parent->buf)) return;
+	ptr += bytes;
+}

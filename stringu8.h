@@ -25,6 +25,7 @@ class StringU8 {
 				void begin(int pos = 0);
 				char *next();
 				char *peek() { return ptr; };
+				void seek(int bytes);
 		};
 		StringU8() { buf = NULL; };
 		StringU8(const char *s) { buf = (char *)s; };

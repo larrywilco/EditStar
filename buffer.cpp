@@ -31,17 +31,31 @@ void CParagraph::cat(char *s, int n) {
 	len += n;
 }
 
+void CParagraph::ins(char *s, int pos) {
+	if (!s) return;
+	if (!*s) return;
+	size_t size = strlen(s) + len;
+	size_t newsize = alloc;
+	while (size >= newsize) newsize += DEFAULT_BLOCK_SIZE;
+	if (size > alloc) {
+		alloc = newsize;
+		char *tmp = (char *)realloc(buf, newsize);
+		buf = tmp;
+	}
+}
+
 int CParagraph::append(char *str) {
 	cat(str);
 	StringU8 tmp(str);
 	return tmp.strLen();
 }
 
-void CParagraph::del(int column) {
+void CParagraph::del(int bytesToSkip, int column) {
 	if (!buf) return;
 	if (column < 1) return;
 	column--;
 	iterator it = begin();
+	it.seek(bytesToSkip);
 	while (char *s = it.next()) {
 		if (column < 1) {
 			int bytes = strlen(s);
@@ -279,14 +293,16 @@ void CFrameBuffer::moveRight(CStory& story) {
 
 void CFrameBuffer::backspace(CStory& story) {
 	if (row >= (int)buf.size()) return;
-	int lineno = buf[row]->lineno;
+	CLine *p = buf[row];
+	int lineno = p->lineno;
+	int skip = p->segbegin;
 	if (story.text[lineno]->size() <= 0) {
 		story.delline(lineno);
 		if (row > 0) row--;
 		column = story.text[lineno]->strLen();
 		return;
 	}
-	story.text[lineno]->del(column);
+	story.text[lineno]->del(skip, column);
 	if (column > 0) column--;
 }
 
