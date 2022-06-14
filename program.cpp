@@ -106,7 +106,7 @@ void CProgram::run() {
 				onTextInput(event);
 				break;
 			case SDL_TEXTEDITING: // During character composition
-				printf("Edit %s\n", event.text.text);
+//				printf("Edit %s\n", event.text.text);
 				break;
 		}
 	}

@@ -10,11 +10,13 @@ class CParagraph : public StringU8 {
 	private:
 		size_t len;
 		size_t alloc;
+		int tag;
 		
 	public:
-		CParagraph();
+		CParagraph(int seq);
 		~CParagraph();
 		
+		int id() { return tag; }
 		void cat(char *s, int n=0);
 		char *get() { return buf; }
 		int size() { return len; }
@@ -27,7 +29,10 @@ class CStory;
 
 class CLine {
 	public:
+		int width, height;
 		int lineno, segbegin, seglen, len;
+		int paragraphId;
+		bool empty;
 		char *buf;
 		CLine();
 		~CLine();
@@ -36,6 +41,7 @@ class CLine {
 
 class CFrameBuffer {
 	private:
+		const int SPACING = 1;
 		std::vector<CLine *>buf;
 		std::vector<SDL_Surface *>lines;
 		TTF_Font *font;
@@ -62,14 +68,23 @@ class CFrameBuffer {
 
 class CStory {
 	friend class CFrameBuffer;
+	private:
+		int paragraph_seq;
+		struct {
+			int line;
+			int ch;
+		} editPt;
+		
 	protected:
 		std::vector<CParagraph *>text;
-		int top, right, bottom, left;
+		int top;
 		
 	public:
 		CStory();
 		~CStory();
 		
+		int getLineId() { return editPt.line; }
+		int getCurrentChar() { return editPt.ch; }
 		int append(char *s);
 		void newline();
 		void delline(int idx);

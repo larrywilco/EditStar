@@ -4,12 +4,12 @@
 #include "buffer.h"
 
 #define DEFAULT_BLOCK_SIZE 1024
-#define SPACING 1
 
-CParagraph::CParagraph() {
+CParagraph::CParagraph(int seq) {
 	buf = (char *)calloc(sizeof(char), DEFAULT_BLOCK_SIZE);
 	len = 0;
 	alloc = DEFAULT_BLOCK_SIZE;
+	tag = seq;
 }
 
 CParagraph::~CParagraph() {
@@ -46,8 +46,7 @@ void CParagraph::ins(char *s, int pos) {
 
 int CParagraph::append(char *str) {
 	cat(str);
-	StringU8 tmp(str);
-	return tmp.strLen();
+	return strlen(buf);
 }
 
 void CParagraph::del(int bytesToSkip, int column) {
@@ -69,9 +68,12 @@ void CParagraph::del(int bytesToSkip, int column) {
 }
 
 CStory::CStory() {
-	CParagraph *tmp = new CParagraph();
+	CParagraph *tmp = new CParagraph(1);
 	text.push_back(tmp);
-	top = left = bottom = right = 0;
+	top = 0;
+	paragraph_seq = 2;
+	editPt.line = 0;
+	editPt.ch = 0;
 }
 
 CStory::~CStory() {
@@ -84,13 +86,14 @@ CStory::~CStory() {
 
 int CStory::append(char *s) {
 	CParagraph *p = text.back();
-	int chars = p->append(s);
-	right++;
-	return chars;
+	editPt.line = p->id();
+	editPt.ch = p->append(s);
+	StringU8 line(s);
+	return line.strLen();
 }
 
 void CStory::newline() {
-	CParagraph *tmp = new CParagraph();
+	CParagraph *tmp = new CParagraph(paragraph_seq++);
 	text.push_back(tmp);
 //	bottom++;
 }
@@ -104,7 +107,10 @@ void CStory::delline(int idx) {
 
 CLine::CLine() {
 	buf = NULL;
-	len = segbegin = seglen = 0; 
+	len = segbegin = seglen = 0;
+	width = height = 0;
+	lineno = 0;
+	empty = false;
 }
 CLine::CLine(char *s) { 
 	buf = s; 
@@ -133,101 +139,6 @@ void CFrameBuffer::freeBuffer() {
 		delete p;
 	}
 	buf.clear();
-}
-
-// Figure out the range of text fitted into the viewing rect
-void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
-	int txtw = 0, txth = 0;
-	freeBuffer();
-	font = ft;
-	rect = r;
-	rect.y = 0;
-	cursor.h = 0;
-	int length = story.text.size();
-	int height = 0;
-	bool good = true;
-	for (int y = story.top; (y<length) && good; y++) {
-	bool emptyLine = false;
-		int startpos = 0;
-		int seglen = 0;
-		CParagraph *p = story.text[y];
-		char *utf8 = p->get();
-		int byteRemain = p->size();
-		char *dup = NULL;
-		if ((!utf8) || (*utf8 == '\0')) { // Take care of blank line
-			emptyLine = true;
-			dup = strdup(" ");
-		} else {
-			emptyLine = false;
-			dup = (char *)calloc(sizeof(char), byteRemain+2);
-		}
-		CParagraph::iterator it = p->begin();
-		bool cont = true;
-		char *s;
-		while ((s = it.next()) && cont) {
-			int preserve = strlen(dup);
-			int byteUsed = strlen(s);
-			byteRemain -= byteUsed;
-			seglen += byteUsed;
-			strcat(dup, s);
-			TTF_SizeUTF8(font, dup, &txtw, &txth);
-			printf("Row:%d y:%d\n", row, y);
-			if (txtw >= r.w) {
-				*(dup + preserve) = '\0';
-				height += txth;
-				if (row == y) {
-					cursor.x = txtw+SPACING;
-					cursor.w = txtw+SPACING;
-				}
-				if (y <= row) {
-					cursor.h += txth;
-					cursor.y = cursor.h - txth;
-				}
-				CLine *ln = new CLine(dup);
-				ln->lineno = y;
-				ln->segbegin = startpos;
-				ln->seglen = seglen;
-				buf.push_back(ln);
-				startpos += seglen;
-				seglen = 0;
-				y++;
-				if (height >= r.h) cont = false;
-				if (byteRemain > 0)
-					dup = (char *)calloc(sizeof(char), byteRemain+4);
-				else dup = NULL;
-			}
-		}
-		if ((dup) && (*dup)) {
-			TTF_SizeUTF8(font, dup, &txtw, &txth);
-			height += txth;
-			if (row == y) {
-				if (emptyLine) {
-					cursor.x = SPACING;
-					cursor.w = SPACING;
-				} else {
-					cursor.x = txtw+SPACING;
-					cursor.w = txtw+SPACING;
-				}
-			}
-			CLine *ln = new CLine(dup);
-			ln->lineno = y;
-			ln->segbegin = startpos;
-			ln->seglen = seglen;
-			buf.push_back(ln);
-			startpos += seglen;
-			seglen = 0;
-			if (y <= row) {
-				cursor.h += txth;
-				cursor.y = cursor.h - txth;
-			}
-		}
-		if (height >= r.h) {
-			good = false;
-			continue;
-		}
-		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d row: %d y:%d \n", 
-			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, row, y);
-	}
 }
 
 /**
@@ -307,6 +218,6 @@ void CFrameBuffer::backspace(CStory& story) {
 }
 
 void CFrameBuffer::insert(CStory& story, char *text) {
-	int chars = story.append(text);
-	column += chars;
+	story.append(text);
+//	column += chars;
 }
