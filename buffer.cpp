@@ -49,15 +49,16 @@ int CParagraph::append(char *str) {
 	return strlen(buf);
 }
 
-void CParagraph::del(int bytesToSkip, int column) {
-	if (!buf) return;
-	if (column < 1) return;
+int CParagraph::del(int bytesToSkip, int column) {
+	if (!buf) return 0;
+	if (column < 1) return 0;
 	column--;
 	iterator it = begin();
 	it.seek(bytesToSkip);
+	int bytes = 0;
 	while (char *s = it.next()) {
 		if (column < 1) {
-			int bytes = strlen(s);
+			bytes = strlen(s);
 			char *src = it.peek();
 			char *dest = src - bytes;
 			memmove(dest, src, bytes);
@@ -65,6 +66,12 @@ void CParagraph::del(int bytesToSkip, int column) {
 		if (column > 0) column--;
 	}
 	len = strlen(buf);
+	return bytes;
+}
+
+void CParagraph::clear() {
+	memset(buf, 0, len);
+	len = 0;
 }
 
 CStory::CStory() {
@@ -73,7 +80,7 @@ CStory::CStory() {
 	top = 0;
 	paragraph_seq = 2;
 	editPt.line = 0;
-	editPt.ch = 0;
+	editPt.byte = 0;
 }
 
 CStory::~CStory() {
@@ -86,8 +93,8 @@ CStory::~CStory() {
 
 int CStory::append(char *s) {
 	CParagraph *p = text.back();
-	editPt.line = p->id();
-	editPt.ch = p->append(s);
+	editPt.line = text.size() - 1;
+	editPt.byte = p->append(s);
 	StringU8 line(s);
 	return line.strLen();
 }
@@ -95,14 +102,41 @@ int CStory::append(char *s) {
 void CStory::newline() {
 	CParagraph *tmp = new CParagraph(paragraph_seq++);
 	text.push_back(tmp);
-//	bottom++;
+	editPt.line = text.size() - 1;
+	editPt.byte = 0;
 }
 
 void CStory::delline(int idx) {
+	printf("Delete line: %d\n", idx);
+	if (text.size() < 2) {
+		// Only game in town. DO not remove.
+		text[idx]->clear();
+		editPt.line = 0;
+		editPt.byte = 0;
+		return; 
+	}
+	if (idx > 0) {
+		editPt.line = idx - 1;
+		editPt.byte = text[editPt.line]->size();
+	} else if (idx == 0) {
+		editPt.line = 0;
+		editPt.byte = text[1]->size();
+	}
 	CParagraph *p = text[idx];
 	text.erase(text.begin() + idx);
 	delete p;
-//	bottom--;
+}
+
+void CStory::del(CLine *p, int col) {
+	int lineno = p->lineno;
+	printf("Size: %d\n", text[lineno]->size());
+	if (text[lineno]->size() <= 0) {
+		delline(lineno);
+		return;
+	}
+	int bytes = text[lineno]->del(p->segbegin, col);
+	if (editPt.byte > 0) editPt.byte -= bytes;
+	printf("editPt line: %d byte: %d\n", editPt.line, editPt.byte);
 }
 
 CLine::CLine() {
@@ -119,7 +153,7 @@ CLine::CLine(char *s) {
 }
 
 CLine::~CLine() {
-	if (buf) free(buf);
+	if ((buf) && (!empty)) free(buf);
 	buf = NULL;
 }
 CFrameBuffer::CFrameBuffer() {
@@ -152,7 +186,12 @@ SDL_Surface * CFrameBuffer::render(SDL_Color& color) {
 	SDL_Rect r = {0, 0, 0, 0};
 	for(int i=0; i<(int)buf.size(); i++) {
 		char *s = buf[i]->buf;
-		SDL_Surface *surface = TTF_RenderUTF8_Blended(font, s, color);
+		SDL_Surface *surface;
+		if (buf[i]->empty) {
+			surface = TTF_RenderUTF8_Blended(font, " ", color);
+		} else {
+			surface = TTF_RenderUTF8_Blended(font, s, color);
+		}
 		SDL_BlitSurface(surface, NULL, area, &r);
 		r.y += surface->h;
 		SDL_FreeSurface(surface);
@@ -204,20 +243,9 @@ void CFrameBuffer::moveRight(CStory& story) {
 
 void CFrameBuffer::backspace(CStory& story) {
 	if (row >= (int)buf.size()) return;
-	CLine *p = buf[row];
-	int lineno = p->lineno;
-	int skip = p->segbegin;
-	if (story.text[lineno]->size() <= 0) {
-		story.delline(lineno);
-		if (row > 0) row--;
-		column = story.text[lineno]->strLen();
-		return;
-	}
-	story.text[lineno]->del(skip, column);
-	if (column > 0) column--;
+	story.del(buf[row], column);
 }
 
 void CFrameBuffer::insert(CStory& story, char *text) {
 	story.append(text);
-//	column += chars;
 }

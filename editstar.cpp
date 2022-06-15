@@ -7,11 +7,9 @@ CEditStar::~CEditStar() {
 }
 
 void CEditStar::onKeyReturn() {
-	eraseCursor();
 	story.newline();
 	frameBuffer.newLine();
-	drawCursor();
-	show();
+	render();
 }
 
 void CEditStar::onKeyLeft() {

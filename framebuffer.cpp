@@ -1,17 +1,52 @@
 #include "buffer.h"
 
+/**
+ * Recalculate the cursor position on the view port
+ * given the current edit position in the text.
+ */
+void CFrameBuffer::calibrate(CStory& story) {
+	std::vector<CLine *>::iterator it;
+	int cnt = 0;
+	int height = 0;
+	printf("Calibrate: \n");
+	for (it = buf.begin(); it != buf.end(); ++it) {
+		CLine *obj = *it;
+		printf("Line: %d index: %d width: %d\n", story.getCurrentLine(),
+		story.getCurrentIndex(), obj->empty);
+		if (cnt == story.getCurrentLine()) {
+			row = cnt;
+			cursor.y = height;
+			cursor.h = height + obj->height;
+			if (obj->empty) {
+				column = 0;
+				cursor.x = SPACING;
+				cursor.w = SPACING;
+				break;
+			}
+			int idx = story.getCurrentIndex();
+			if ((idx >= obj->segbegin) && (idx <= obj->seglen)) {
+				column = obj->seglen - obj->segbegin;
+				cursor.x = obj->width;
+				cursor.w = cursor.x;
+				break;
+			}
+		}
+		height += obj->height;
+		cnt++;
+	}
+}
+
 // Figure out the range of text fitted into the viewing rect
 void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 	int txtw = 0, txth = 0;
 	freeBuffer();
 	font = ft;
+	// Save the view rectangle for later use
 	rect = r;
 	rect.y = 0;
-	cursor.h = 0;
 	int length = story.text.size();
 	int height = 0;
 	bool good = true;
-	row = -1; // Recount row based on cursor in the story
 	for (int y = story.top; (y<length) && good; y++) {
 		bool emptyLine = false;
 		int startpos = 0;
@@ -22,7 +57,7 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 		char *dup = NULL;
 		if ((!utf8) || (*utf8 == '\0')) { // Take care of blank line
 			emptyLine = true;
-			dup = strdup(" ");
+			dup = (char *)" ";
 		} else {
 			emptyLine = false;
 			dup = (char *)calloc(sizeof(char), byteRemain+2);
@@ -78,21 +113,8 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			good = false;
 			continue;
 		}
-		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d row: %d y:%d \n", 
-			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, row, y);
+		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d y:%d \n", 
+			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, y);
 	}
-	std::vector<CLine *>::iterator it;
-	int cnt = 0;
-	for (it = buf.begin(); it != buf.end(); ++it) {
-		CLine *obj = *it;
-		if (obj->paragraphId == story.getLineId()) {
-			int idx = story.getCurrentChar();			
-			if ((idx > obj->segbegin) && (idx <= obj->seglen)) {
-				row = cnt;
-				column = obj->seglen - obj->segbegin;
-				break;
-			}
-		}
-		cnt++;
-	}
+	calibrate(story);
 }

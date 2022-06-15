@@ -21,8 +21,9 @@ class CParagraph : public StringU8 {
 		char *get() { return buf; }
 		int size() { return len; }
 		int append(char *s);
-		void del(int bytesToSkip, int column);
+		int del(int bytesToSkip, int column);
 		void ins(char *s, int pos);
+		void clear();
 };
 
 class CStory;
@@ -59,6 +60,7 @@ class CFrameBuffer {
 		void freeBuffer();
 		std::vector<SDL_Surface *>& getLines() { return lines; }
 		int size() { return buf.size(); }
+		void calibrate(CStory& story);
 		void newLine();
 		void moveLeft(CStory& story);
 		void moveRight(CStory& story);
@@ -72,7 +74,7 @@ class CStory {
 		int paragraph_seq;
 		struct {
 			int line;
-			int ch;
+			int byte;
 		} editPt;
 		
 	protected:
@@ -83,11 +85,12 @@ class CStory {
 		CStory();
 		~CStory();
 		
-		int getLineId() { return editPt.line; }
-		int getCurrentChar() { return editPt.ch; }
+		int getCurrentLine() { return editPt.line; }
+		int getCurrentIndex() { return editPt.byte; }
 		int append(char *s);
 		void newline();
 		void delline(int idx);
+		void del(CLine *p, int col);
 };
 
 #endif

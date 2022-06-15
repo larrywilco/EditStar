@@ -15,6 +15,9 @@ editstar: main.cpp $(OBJS)
 all: demo.cpp
 	g++ $(CFLAGS) $< $(LIBS)
 
+clean:
+	rm *.o
+
 .cpp.o:
 	g++ -c $(CFLAGS) $< -o $@
 
