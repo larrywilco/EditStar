@@ -8,11 +8,8 @@ void CFrameBuffer::calibrate(CStory& story) {
 	std::vector<CLine *>::iterator it;
 	int cnt = 0;
 	int height = 0;
-	printf("Calibrate: \n");
 	for (it = buf.begin(); it != buf.end(); ++it) {
 		CLine *obj = *it;
-		printf("Line: %d index: %d width: %d\n", story.getCurrentLine(),
-		story.getCurrentIndex(), obj->empty);
 		if (cnt == story.getCurrentLine()) {
 			row = cnt;
 			cursor.y = height;
@@ -74,6 +71,7 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
 			printf("txtw: %d r.h:%d\n", txtw, r.w);
 			if (txtw >= r.w) {
+				printf("Tail: %s\n", dup + preserve);
 				*(dup + preserve) = '\0';
 				height += txth;
 				CLine *ln = new CLine(dup);
@@ -89,8 +87,11 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 				seglen = 0;
 				y++;
 				if (height >= r.h) cont = false;
-				if (byteRemain > 0)
+				printf("Byte remina:%d\n", byteRemain);
+				if (byteRemain > 0) {
 					dup = (char *)calloc(sizeof(char), byteRemain+4);
+					strcpy(dup, s);
+				}
 				else dup = NULL;
 			}
 		}
