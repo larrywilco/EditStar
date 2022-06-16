@@ -11,6 +11,7 @@ CProgram::CProgram() {
 	fontSize = 32;
 	winWidth = 640;
 	winHeight = 480;
+	eventTimeout = 1000; // 1 second
 	font = NULL;
 //	bgcolor = {0x0, 0x0, 0x00, SDL_ALPHA_OPAQUE};
 	bgcolor = {40, 40, 40, SDL_ALPHA_OPAQUE};
@@ -94,7 +95,7 @@ void CProgram::run() {
 	}
 	SDL_StartTextInput();
 	while (cont) {
-		SDL_WaitEvent(&event);
+		SDL_WaitEventTimeout(&event, eventTimeout);
 		switch (event.type) {
 			case SDL_QUIT:
 				cont = false;
@@ -109,6 +110,7 @@ void CProgram::run() {
 //				printf("Edit %s\n", event.text.text);
 				break;
 		}
+		onIdle();
 	}
 	SDL_StopTextInput();
 	if (font) TTF_CloseFont(font);

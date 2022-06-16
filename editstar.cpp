@@ -1,6 +1,7 @@
 #include "editstar.h"
 
 CEditStar::CEditStar() {
+	blinker = false;
 }
 
 CEditStar::~CEditStar() {
@@ -100,4 +101,15 @@ void CEditStar::render() {
 void CEditStar::onTextInput(SDL_Event& event) {
 	frameBuffer.insert(story, event.text.text);
 	render();
+}
+
+void CEditStar::onIdle() {
+	if (blinker) {
+		drawCursor();
+		blinker = false;
+	} else {
+		eraseCursor();
+		blinker = true;
+	}
+	show();
 }

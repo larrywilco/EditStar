@@ -10,6 +10,7 @@ class CProgram {
 		void init();
 		
 	protected:
+		int eventTimeout;
 		char *fontPath;
 		char *fontFamily;
 		int fontSize;
@@ -23,6 +24,7 @@ class CProgram {
 		SDL_Color fgcolor;
 		virtual void onKeyDown(SDL_Event& event) = 0;
 		virtual void onTextInput(SDL_Event& event) = 0;
+		virtual void onIdle() = 0;
 		void show();
 		void clear();
 		void clearAndRender(SDL_Texture *texture, SDL_Rect *src, SDL_Rect *dest);

@@ -9,6 +9,7 @@ class CEditStar : public CProgram {
 		CStory story;
 		CFrameBuffer frameBuffer;
 		char *unicode;
+		bool blinker;
 		void eraseCursor();
 		void drawCursor();
 		void onKeyReturn();
@@ -20,6 +21,7 @@ class CEditStar : public CProgram {
 	protected:
 		virtual void onKeyDown(SDL_Event& event);
 		virtual void onTextInput(SDL_Event& event);
+		virtual void onIdle();
 		void render();
 		
 	public:
