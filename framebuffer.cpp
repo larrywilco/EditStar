@@ -65,11 +65,9 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 		while ((s = it.next()) && cont) {
 			int preserve = strlen(dup);
 			int byteUsed = strlen(s);
-			byteRemain -= byteUsed;
-			seglen += byteUsed;
 			strcat(dup, s);
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
-			printf("txtw: %d r.h:%d\n", txtw, r.w);
+//			printf("txtw: %d r.h:%d\n", txtw, r.w);
 			if (txtw >= r.w) {
 				printf("Tail: %s\n", dup + preserve);
 				*(dup + preserve) = '\0';
@@ -94,7 +92,10 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 				}
 				else dup = NULL;
 			}
+			seglen += byteUsed;
+			byteRemain -= byteUsed;
 		}
+		printf("Dup: %s\n", dup);
 		if ((dup) && (*dup)) {
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
 			height += txth;
@@ -110,6 +111,7 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			startpos += seglen;
 			seglen = 0;
 		}
+		printf("Lines: %ld\n", buf.size());
 		if (height >= r.h) {
 			good = false;
 			continue;
