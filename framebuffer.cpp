@@ -6,12 +6,12 @@
  */
 void CFrameBuffer::calibrate(CStory& story) {
 	std::vector<CLine *>::iterator it;
-	int cnt = 0;
 	int height = 0;
-	for (it = buf.begin(); it != buf.end(); ++it) {
+	row = 0;
+	for (it = buf.begin(); it != buf.end(); it++) {
 		CLine *obj = *it;
-		if (cnt == story.getCurrentLine()) {
-			row = cnt;
+		if (obj->lineno == story.getCurrentLine()) {
+			row++;
 			cursor.y = height;
 			cursor.h = height + obj->height;
 			if (obj->empty) {
@@ -21,15 +21,14 @@ void CFrameBuffer::calibrate(CStory& story) {
 				break;
 			}
 			int idx = story.getCurrentIndex();
-			if ((idx >= obj->segbegin) && (idx <= obj->seglen)) {
-				column = obj->seglen - obj->segbegin;
+			if ((idx >= obj->segbegin) && (idx <= (obj->seglen + obj->segbegin))) {
+				column = obj->seglen;
 				cursor.x = obj->width;
 				cursor.w = cursor.x;
 				break;
 			}
 		}
 		height += obj->height;
-		cnt++;
 	}
 }
 
@@ -69,7 +68,6 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
 //			printf("txtw: %d r.h:%d\n", txtw, r.w);
 			if (txtw >= r.w) {
-				printf("Tail: %s\n", dup + preserve);
 				*(dup + preserve) = '\0';
 				height += txth;
 				CLine *ln = new CLine(dup);
@@ -83,9 +81,7 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 				buf.push_back(ln);
 				startpos += seglen;
 				seglen = 0;
-				y++;
 				if (height >= r.h) cont = false;
-				printf("Byte remina:%d\n", byteRemain);
 				if (byteRemain > 0) {
 					dup = (char *)calloc(sizeof(char), byteRemain+4);
 					strcpy(dup, s);
@@ -95,7 +91,6 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			seglen += byteUsed;
 			byteRemain -= byteUsed;
 		}
-		printf("Dup: %s\n", dup);
 		if ((dup) && (*dup)) {
 			TTF_SizeUTF8(font, dup, &txtw, &txth);
 			height += txth;
@@ -111,13 +106,12 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 			startpos += seglen;
 			seglen = 0;
 		}
-		printf("Lines: %ld\n", buf.size());
 		if (height >= r.h) {
 			good = false;
 			continue;
 		}
-		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d y:%d \n", 
-			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, y);
+		printf("w:%d h:%d x1:%d x2: %d y1: %d y2: %d y:%d lines:%ld\n", 
+			txtw, txth, cursor.x, cursor.w, cursor.y, cursor.h, y, buf.size());
 	}
 	calibrate(story);
 }
