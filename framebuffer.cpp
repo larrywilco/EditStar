@@ -11,7 +11,6 @@ void CFrameBuffer::calibrate(CStory& story) {
 	for (it = buf.begin(); it != buf.end(); it++) {
 		CLine *obj = *it;
 		if (obj->lineno == story.getCurrentLine()) {
-			row++;
 			cursor.y = height;
 			cursor.h = height + obj->height;
 			if (obj->empty) {
@@ -23,12 +22,19 @@ void CFrameBuffer::calibrate(CStory& story) {
 			int idx = story.getCurrentIndex();
 			if ((idx >= obj->segbegin) && (idx <= (obj->seglen + obj->segbegin))) {
 				column = obj->seglen;
-				cursor.x = obj->width;
+				char *s= strdup(obj->buf);
+				*(s+idx) = '\0';
+				int txtw, txth;
+				TTF_SizeUTF8(font, s, &txtw, &txth);
+				column = StringU8(s).strLen();
+				cursor.x = txtw;
+				free(s);
 				cursor.w = cursor.x;
 				break;
 			}
 		}
 		height += obj->height;
+		row++;
 	}
 }
 

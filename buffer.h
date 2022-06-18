@@ -11,6 +11,7 @@ class CParagraph : public StringU8 {
 		size_t len;
 		size_t alloc;
 		int tag;
+		void checkBuffer(size_t bytesRequired);
 		
 	public:
 		CParagraph(int seq);
@@ -22,7 +23,7 @@ class CParagraph : public StringU8 {
 		int size() { return len; }
 		int append(char *s);
 		int del(int bytesToSkip, int column);
-		void ins(char *s, int pos);
+		int ins(char *s, int pos);
 		void clear();
 };
 
@@ -91,6 +92,8 @@ class CStory {
 		void newline();
 		void delline(int idx);
 		void del(CLine *p, int col);
+		void ins(char *txt);
+		void moveLeft(CLine *p);
 };
 
 #endif

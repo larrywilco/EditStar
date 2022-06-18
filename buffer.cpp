@@ -17,31 +17,39 @@ CParagraph::~CParagraph() {
 	buf = NULL;
 }
 
-void CParagraph::cat(char *s, int n) {
-	if (n < 1) n = strlen(s);
-	size_t size = strlen(s) + len;
+void CParagraph::checkBuffer(size_t bytesRequired) {
 	size_t newsize = alloc;
-	while (size >= newsize) newsize += DEFAULT_BLOCK_SIZE;
-	if (size > alloc) {
+	while (bytesRequired >= newsize) newsize += DEFAULT_BLOCK_SIZE;
+	if (bytesRequired > alloc) {
 		alloc = newsize;
 		char *tmp = (char *)realloc(buf, newsize);
 		buf = tmp;
 	}
+}
+
+void CParagraph::cat(char *s, int n) {
+	if (n < 1) n = strlen(s);
+	size_t size = strlen(s) + len;
+	checkBuffer(size);
 	strncat(buf, s, n);
 	len += n;
 }
 
-void CParagraph::ins(char *s, int pos) {
-	if (!s) return;
-	if (!*s) return;
-	size_t size = strlen(s) + len;
-	size_t newsize = alloc;
-	while (size >= newsize) newsize += DEFAULT_BLOCK_SIZE;
-	if (size > alloc) {
-		alloc = newsize;
-		char *tmp = (char *)realloc(buf, newsize);
-		buf = tmp;
+int CParagraph::ins(char *s, int pos) {
+	if (!s) return pos;
+	if (!*s) return pos;
+	if (pos >= (int)len) {
+		return append(s);
 	}
+	size_t word = strlen(s);
+	size_t size = word + len;
+	checkBuffer(size);
+	size_t nbytes= strlen(buf+pos);
+	memmove(buf+pos+word, buf+pos, nbytes);
+	memcpy(buf+pos, s, word);
+	len = size;
+	*(buf+len) = '\0';
+	return (pos + word);
 }
 
 int CParagraph::append(char *str) {
@@ -139,6 +147,28 @@ void CStory::del(CLine *p, int col) {
 	printf("editPt line: %d byte: %d\n", editPt.line, editPt.byte);
 }
 
+void CStory::ins(char *txt) {
+	int lineno = editPt.line;
+	editPt.byte = text[lineno]->ins(txt, editPt.byte);
+}
+
+void CStory::moveLeft(CLine *ln) {
+	CParagraph *p = text[ln->lineno];
+	if (editPt.byte <= ln->segbegin) return; // Top of line. Return
+	CParagraph::iterator it = p->begin();
+	it.seek(ln->segbegin);
+	int nbytes = 0;
+	while (char *s = it.next()) {
+		size_t l = strlen(s);
+		if ((int)(nbytes + l) >= editPt.byte) {
+			editPt.byte = nbytes;
+			break;
+		}
+		nbytes += l;
+	}
+
+}
+
 CLine::CLine() {
 	buf = NULL;
 	len = segbegin = seglen = 0;
@@ -210,6 +240,7 @@ void CFrameBuffer::newLine() {
 
 void CFrameBuffer::horizontalMove() {
 	if (column < 1) return;
+	printf("ROw:%d\n", row);
 	int txtw, txth;
 	StringU8 s(buf[row]->buf);
 	char *s2 = strdup((char *)s);
@@ -223,6 +254,7 @@ void CFrameBuffer::horizontalMove() {
 void CFrameBuffer::moveLeft(CStory& story) {
 	if (column < 1) return;
 	column--;
+	story.moveLeft(buf[row]);
 	if (column == 0) {
 		cursor.x = SPACING;
 		cursor.w = SPACING;
@@ -247,5 +279,6 @@ void CFrameBuffer::backspace(CStory& story) {
 }
 
 void CFrameBuffer::insert(CStory& story, char *text) {
-	story.append(text);
+	story.ins(text);
+//	story.append(text);
 }
