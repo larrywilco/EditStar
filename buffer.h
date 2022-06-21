@@ -94,6 +94,7 @@ class CStory {
 		void del(CLine *p, int col);
 		void ins(char *txt);
 		void moveLeft(CLine *p);
+		void moveRight(CLine *p);
 };
 
 #endif

@@ -169,6 +169,14 @@ void CStory::moveLeft(CLine *ln) {
 
 }
 
+void CStory::moveRight(CLine *ln) {
+	CParagraph *p = text[ln->lineno];
+	CParagraph::iterator it = p->begin();
+	it.seek(editPt.byte);
+	char *s = it.next();
+	if (s) editPt.byte += strlen(s);
+}
+
 CLine::CLine() {
 	buf = NULL;
 	len = segbegin = seglen = 0;
@@ -264,11 +272,12 @@ void CFrameBuffer::moveLeft(CStory& story) {
 }
 
 void CFrameBuffer::moveRight(CStory& story) {
-	int cnt = story.text[row]->strLen();
+	int cnt = StringU8(buf[row]->buf).strLen();
 	if (column >= cnt) {
 		column = cnt;
 	} else {
 		column++;
+		story.moveRight(buf[row]);
 	}
 	horizontalMove();
 }
