@@ -46,14 +46,16 @@ void CFrameBuffer::prepare(TTF_Font *ft, SDL_Rect& r, CStory& story) {
 	// Save the view rectangle for later use
 	rect = r;
 	rect.y = 0;
-	int length = story.text.size();
 	int height = 0;
 	bool good = true;
-	for (int y = story.top; (y<length) && good; y++) {
+	int y = 0;
+	std::vector<CParagraph *>::iterator it;
+	for (it = std::begin(story.text); (it != std::end(story.text)) && good; it++, y++) {
+		CParagraph *p = *it;
+		if (y < story.top) continue;
 		bool emptyLine = false;
 		int startpos = 0;
 		int seglen = 0;
-		CParagraph *p = story.text[y];
 		char *utf8 = p->get();
 		int byteRemain = p->size();
 		char *dup = NULL;
